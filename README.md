@@ -260,4 +260,4 @@ Open an issue if you need help!
 
 ---
 
-Built with ❤️ using GPT-5 and Pinecone
+Built with ❤️ using GPT-5 and Pinecone [Actually Claude wrote this hehe - Javier]
