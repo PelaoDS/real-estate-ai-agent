@@ -1,11 +1,13 @@
 """Real Estate AI Agent with GPT-5 and search tools (MVP)."""
 
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Type
 from loguru import logger
 from langchain.tools import BaseTool
 from langchain.agents import AgentExecutor, create_openai_functions_agent
 from langchain.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
+from langchain.callbacks.manager import CallbackManagerForToolRun
+from pydantic import Field
 
 from .config import settings
 from .pinecone_client import pinecone_client
@@ -14,8 +16,8 @@ from .pinecone_client import pinecone_client
 class PropertySearchTool(BaseTool):
     """Tool for searching properties with semantic search and filters."""
     
-    name = "search_properties"
-    description = """
+    name: str = Field(default="search_properties")
+    description: str = Field(default="""
     Search for real estate properties using semantic search and metadata filters.
     
     Parameters:
@@ -34,9 +36,15 @@ class PropertySearchTool(BaseTool):
     
     Example:
     search_properties("modern apartment with city views", {"city": "Miami", "min_bedrooms": 2, "max_price": 500000})
-    """
+    """)
     
-    def _run(self, query: str, filters: Optional[Dict[str, Any]] = None, top_k: int = 10) -> List[Dict[str, Any]]:
+    def _run(
+        self, 
+        query: str, 
+        filters: Optional[Dict[str, Any]] = None, 
+        top_k: int = 10,
+        run_manager: Optional[CallbackManagerForToolRun] = None
+    ) -> List[Dict[str, Any]]:
         """Execute property search."""
         try:
             logger.info(f"Searching: query='{query}', filters={filters}")
@@ -86,10 +94,13 @@ class PropertySearchTool(BaseTool):
 class GetIndexStatsTool(BaseTool):
     """Tool for getting database statistics."""
     
-    name = "get_database_stats"
-    description = "Get statistics about the property database including total number of properties."
+    name: str = Field(default="get_database_stats")
+    description: str = Field(default="Get statistics about the property database including total number of properties.")
     
-    def _run(self) -> Dict[str, Any]:
+    def _run(
+        self, 
+        run_manager: Optional[CallbackManagerForToolRun] = None
+    ) -> Dict[str, Any]:
         """Get database stats."""
         try:
             stats = pinecone_client.get_index_stats()
