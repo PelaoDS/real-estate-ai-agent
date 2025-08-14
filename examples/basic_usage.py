@@ -1,6 +1,9 @@
 """Basic usage example for the Real Estate AI Agent."""
 
+import sys
 import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -25,7 +28,7 @@ def main():
     ]
     
     for i, query in enumerate(test_queries, 1):
-        print(f"\\n🔍 Query {i}: {query}")
+        print(f"\n🔍 Query {i}: {query}")
         print("-" * 50)
         
         try:
@@ -34,10 +37,10 @@ def main():
         except Exception as e:
             print(f"❌ Error: {e}")
         
-        print("\\n" + "="*60)
+        print("\n" + "="*60)
     
     # Database stats
-    print("\\n📊 Database Information:")
+    print("\n📊 Database Information:")
     print("-" * 30)
     try:
         db_info = real_estate_agent.get_database_info()
