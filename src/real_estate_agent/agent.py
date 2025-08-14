@@ -3,7 +3,7 @@
 from typing import List, Dict, Any, Optional, Type
 from loguru import logger
 from langchain.tools import BaseTool
-from langchain.agents import AgentExecutor, create_openai_functions_agent
+from langchain.agents import AgentExecutor, create_tool_calling_agent  # Updated for GPT-5
 from langchain.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from langchain.callbacks.manager import CallbackManagerForToolRun
@@ -119,10 +119,11 @@ class RealEstateAgent:
     def __init__(self):
         """Initialize the agent with GPT-5 and tools."""
         self.llm = ChatOpenAI(
-            model=settings.openai_model,  # GPT-5
+            model=settings.openai_model,  # Will use gpt-4o for now
             temperature=settings.openai_temperature,
             max_tokens=settings.openai_max_tokens,
-            openai_api_key=settings.openai_api_key
+            openai_api_key=settings.openai_api_key,
+            streaming=False  # Disable streaming for better compatibility
         )
         
         # Available tools
@@ -132,7 +133,7 @@ class RealEstateAgent:
         ]
         
         # System prompt for the agent
-        self.system_prompt = """You are an expert real estate agent powered by GPT-5. You help clients find their dream properties using a comprehensive property database.
+        self.system_prompt = """You are an expert real estate agent. You help clients find their dream properties using a comprehensive property database.
 
 Your capabilities:
 - Search properties using semantic understanding and filters
@@ -161,8 +162,8 @@ Use your tools to search the database and provide comprehensive responses."""
             ("placeholder", "{agent_scratchpad}")
         ])
         
-        # Create agent
-        agent = create_openai_functions_agent(
+        # Use create_tool_calling_agent for better GPT-5 compatibility
+        agent = create_tool_calling_agent(
             llm=self.llm,
             tools=self.tools,
             prompt=prompt
