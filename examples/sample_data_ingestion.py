@@ -1,5 +1,9 @@
 """Sample data ingestion script for the Real Estate AI Agent."""
 
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import json
 from datetime import datetime, timedelta
 from typing import List
@@ -103,7 +107,7 @@ def create_sample_properties() -> List[PropertyListing]:
             "state": "CA",
             "neighborhood": "La Jolla",
             "year_built": 2021,
-            "amenities": [Amenity.POOL, Amenity.WALK_IN_CLOSET, Amenity.DISHWASHER, Amenity.PARKING],
+            "amenities": [Amenity.POOL, Amenity.HARDWOOD_FLOORS, Amenity.DISHWASHER, Amenity.PARKING],
             "listing_agent": "Michael Brown"
         },
         {
@@ -118,7 +122,7 @@ def create_sample_properties() -> List[PropertyListing]:
             "state": "IL",
             "neighborhood": "River North",
             "year_built": 2017,
-            "amenities": [Amenity.GYM, Amenity.DISHWASHER, Amenity.PARKING, Amenity.ROOF_DECK],
+            "amenities": [Amenity.GYM, Amenity.DISHWASHER, Amenity.PARKING],
             "listing_agent": "Jennifer Wilson"
         },
         {
@@ -188,7 +192,7 @@ def ingest_sample_data():
     print(f"   - Failed: {result['failed']}")
     
     # Get stats
-    print("\\n📊 Database statistics:")
+    print("\n📊 Database statistics:")
     stats = pinecone_client.get_index_stats()
     print(f"   - Total vectors in index: {stats.get('total_vectors', 0)}")
     
