@@ -20,6 +20,7 @@ def main():
     
     # Test queries
     test_queries = [
+        "Dame una propiedad que esté en un piso 24 o más",
         "I'm looking for a 2 bedroom apartment in Miami under $400,000",
         "Show me luxury condos in New York with amenities like pool and gym",
         "Find me a house in California with at least 3 bedrooms and a garage",

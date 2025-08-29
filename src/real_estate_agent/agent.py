@@ -120,7 +120,7 @@ class RealEstateAgent:
         """Initialize the agent with GPT-5 and tools."""
         self.llm = ChatOpenAI(
             model=settings.openai_model,  # Will use gpt-4o for now
-            temperature=settings.openai_temperature,
+            # temperature=settings.openai_temperature, #temperatura default
             max_tokens=settings.openai_max_tokens,
             openai_api_key=settings.openai_api_key,
             streaming=False  # Disable streaming for better compatibility

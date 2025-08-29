@@ -59,7 +59,6 @@ class PropertyMatchEvaluator:
                     {"role": "system", "content": self._get_system_prompt()},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0.1,
                 max_tokens=500
             )
             
