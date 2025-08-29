@@ -4,7 +4,7 @@ from typing import List, Dict, Any, Optional
 from openai import OpenAI
 from loguru import logger
 
-from ..config import settings
+from config import settings
 
 
 class PropertyMatchEvaluator:
