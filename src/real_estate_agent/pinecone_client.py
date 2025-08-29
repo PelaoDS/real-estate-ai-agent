@@ -69,7 +69,7 @@ class PineconeClient:
             self.vector_store = PineconeVectorStore(
                 index=self.index,
                 embedding=self.embeddings,
-                text_key="searchable_content",
+                text_key="description",  # Only vectorize description field
                 namespace=""
             )
             logger.info("Successfully initialized vector store")
@@ -94,9 +94,8 @@ class PineconeClient:
     def upsert_property(self, property_listing: PropertyListing) -> bool:
         """Upsert a single property listing to Pinecone."""
         try:
-            searchable_content = property_listing.get_searchable_content()
-            
-            documents = [searchable_content]
+            # Only vectorize the description
+            documents = [property_listing.description]
             metadatas = [property_listing.to_dict_for_pinecone()["metadata"]]
             ids = [property_listing.metadata.property_id]
             
@@ -129,7 +128,8 @@ class PineconeClient:
             
             for property_listing in batch:
                 try:
-                    batch_texts.append(property_listing.get_searchable_content())
+                    # Only use description for vectorization
+                    batch_texts.append(property_listing.description)
                     batch_metadatas.append(property_listing.to_dict_for_pinecone()["metadata"])
                     batch_ids.append(property_listing.metadata.property_id)
                 except Exception as e:
@@ -181,7 +181,7 @@ class PineconeClient:
             formatted_results = []
             for doc, score in results:
                 result = {
-                    "content": doc.page_content,
+                    "content": doc.page_content,  # This will be the description
                     "metadata": doc.metadata,
                     "similarity_score": score,
                 }
