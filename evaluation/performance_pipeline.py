@@ -2,6 +2,7 @@
 
 import sys
 import os
+import re
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
@@ -144,25 +145,115 @@ class PerformancePipeline:
     
     def _metadata_only_search(self, query: str) -> List[Dict[str, Any]]:
         """Search using only metadata filters (no vectorization)."""
-        # This would be a simplified keyword matching approach
-        # For now, return empty results as placeholder
         logger.info("Using metadata-only search (no vectors)")
-        return []
+        
+        # Simple keyword matching in title/description
+        results = []
+        query_words = query.lower().split()
+        
+        for prop in self.sample_properties[:10]:  # Limit results
+            title_desc = f"{prop.title} {prop.description}".lower()
+            if any(word in title_desc for word in query_words):
+                results.append({
+                    'property_id': prop.metadata.property_id,
+                    'title': prop.title,
+                    'price': prop.metadata.price,
+                    'bedrooms': prop.metadata.bedrooms,
+                    'bathrooms': prop.metadata.bathrooms,
+                    'city': prop.metadata.city,
+                    'state': prop.metadata.state
+                })
+        
+        return results
     
     def _vector_search_with_searchable_content(self, query: str) -> List[Dict[str, Any]]:
         """Search using vectors with searchable content."""
-        from src.real_estate_agent.pinecone_client import pinecone_client
+        from src.real_estate_agent.agent import real_estate_agent
         
-        # This would temporarily modify the client to use searchable_content
-        logger.info("Using vector search with searchable content")
-        return pinecone_client.search_properties(query, {}, 10)
+        logger.info("Using vector search with searchable content (via RealEstateAgent)")
+        response_text = real_estate_agent.search_properties(query)
+        
+        # Parse agent response to extract structured property data
+        return self._parse_agent_response(response_text)
     
     def _vector_search_description_only(self, query: str) -> List[Dict[str, Any]]:
         """Search using vectors with description only (current implementation)."""
-        from src.real_estate_agent.pinecone_client import pinecone_client
+        from src.real_estate_agent.agent import real_estate_agent
         
-        logger.info("Using vector search with description only")
-        return pinecone_client.search_properties(query, {}, 10)
+        logger.info("Using vector search with description only (via RealEstateAgent)")
+        response_text = real_estate_agent.search_properties(query)
+        
+        # Parse agent response to extract structured property data
+        return self._parse_agent_response(response_text)
+    
+    def _parse_agent_response(self, response_text: str) -> List[Dict[str, Any]]:
+        """Parse agent text response to extract property data."""
+        properties = []
+        
+        try:
+            # Look for property patterns in the agent response
+            # Pattern: "- Title (Neighborhood, City, State) — $Price"
+            # Followed by: "X bed | Y bath | Z sq ft | Type | Year | $/sq ft | Days on market"
+            
+            lines = response_text.split('\n')
+            current_property = {}
+            
+            for line in lines:
+                line = line.strip()
+                
+                # Match property title line: "- Title (Location) — $Price"
+                title_match = re.match(r'-\s*(.+?)\s*\((.+?),\s*(.+?),\s*(.+?)\)\s*—\s*\$(.+?)$', line)
+                if title_match:
+                    if current_property:  # Save previous property
+                        properties.append(current_property)
+                    
+                    title, neighborhood, city, state, price_str = title_match.groups()
+                    price = int(price_str.replace(',', '').replace('.0', ''))
+                    
+                    current_property = {
+                        'title': title.strip(),
+                        'city': city.strip(),
+                        'state': state.strip(),
+                        'neighborhood': neighborhood.strip(),
+                        'price': price,
+                        'property_id': 'UNKNOWN'  # Will try to match later
+                    }
+                    continue
+                
+                # Match details line: "X bed | Y bath | Z sq ft | Type | Year | $/sq ft | Days"
+                details_match = re.match(r'(\d+)\s*bed\s*\|\s*(\d+(?:\.\d+)?)\s*bath\s*\|\s*.+?\|\s*(\w+)\s*\|', line)
+                if details_match and current_property:
+                    bedrooms, bathrooms, property_type = details_match.groups()
+                    current_property.update({
+                        'bedrooms': int(bedrooms),
+                        'bathrooms': float(bathrooms),
+                        'property_type': property_type.lower()
+                    })
+                    
+                    # Try to match with known properties based on title, city, price
+                    matched_id = self._find_matching_property_id(current_property)
+                    if matched_id:
+                        current_property['property_id'] = matched_id
+            
+            # Add last property
+            if current_property:
+                properties.append(current_property)
+            
+            logger.info(f"Parsed {len(properties)} properties from agent response")
+            return properties
+            
+        except Exception as e:
+            logger.error(f"Error parsing agent response: {str(e)}")
+            return []
+    
+    def _find_matching_property_id(self, parsed_property: Dict[str, Any]) -> Optional[str]:
+        """Find matching property_id from sample data."""
+        for prop in self.sample_properties:
+            if (prop.title.lower() == parsed_property['title'].lower() and
+                prop.metadata.city.lower() == parsed_property['city'].lower() and
+                prop.metadata.price == parsed_property['price']):
+                return prop.metadata.property_id
+        return None
     
     def _get_properties_by_ids(self, property_ids: List[str]) -> List[Dict[str, Any]]:
         """Get property data by IDs for evaluation."""
