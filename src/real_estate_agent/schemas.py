@@ -96,6 +96,7 @@ class PropertyListing(BaseModel):
             "values": [],  # Will be populated with embeddings from description only
             "metadata": {
                 # Core searchable fields - only description is vectorized
+                "property_id": self.metadata.property_id,  # CRITICAL: Add property_id to metadata
                 "title": self.title,
                 "description": self.description,  # This is what gets vectorized
                 
