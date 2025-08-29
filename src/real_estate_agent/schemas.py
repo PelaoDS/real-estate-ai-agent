@@ -79,9 +79,9 @@ class PropertyMetadata(BaseModel):
 class PropertyListing(BaseModel):
     """Complete property listing with description and metadata (MVP)."""
     
-    # Core content for semantic search
+    # Core content for semantic search - ONLY description will be vectorized
     title: str = Field(..., description="Property listing title")
-    description: str = Field(..., description="Detailed property description")
+    description: str = Field(..., description="Detailed property description for vectorization")
     
     # Structured metadata for filtering
     metadata: PropertyMetadata = Field(..., description="Property metadata for filtering")
@@ -89,38 +89,15 @@ class PropertyListing(BaseModel):
     # System fields
     created_at: datetime = Field(default_factory=datetime.utcnow, description="Record creation timestamp")
     
-    def get_searchable_content(self) -> str:
-        """Get content for embedding and semantic search."""
-        content_parts = [
-            self.title,
-            self.description,
-            f"{self.metadata.property_type.value} in {self.metadata.city}, {self.metadata.state}",
-            f"{self.metadata.bedrooms} bedrooms, {self.metadata.bathrooms} bathrooms",
-            f"{self.metadata.square_feet} square feet",
-        ]
-        
-        if self.metadata.neighborhood:
-            content_parts.append(f"Located in {self.metadata.neighborhood}")
-        
-        if self.metadata.amenities:
-            amenities_str = ", ".join([amenity.value.replace('_', ' ') for amenity in self.metadata.amenities])
-            content_parts.append(f"Amenities: {amenities_str}")
-        
-        if self.metadata.year_built:
-            content_parts.append(f"Built in {self.metadata.year_built}")
-            
-        return " | ".join(content_parts)
-    
     def to_dict_for_pinecone(self) -> dict:
         """Convert to dictionary format suitable for Pinecone."""
         return {
             "id": self.metadata.property_id,
-            "values": [],  # Will be populated with embeddings
+            "values": [],  # Will be populated with embeddings from description only
             "metadata": {
-                # Core searchable fields
+                # Core searchable fields - only description is vectorized
                 "title": self.title,
-                "description": self.description,
-                "searchable_content": self.get_searchable_content(),
+                "description": self.description,  # This is what gets vectorized
                 
                 # Filterable metadata
                 "property_type": self.metadata.property_type.value,
